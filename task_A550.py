@@ -84,16 +84,69 @@ library = [
 
 ]
 
-def get_info(lst):
-    for i in range(len(lst)):
-        print(lst[i])
-        print()
-def get_book_by_num(num):
-    print("Введите номер книги, которую Вы хотите вывести на экран. 1 - 10")
-    print()
+def get_info(*lst):
+    for i in range(10):
+        print(lst[0][i],sep="\n")
 
-def main():
+
+def get_book_by_num():
+    print("Введите номер книги, которую Вы хотите вывести на экран. 1 - 10", sep='\n')
+    num = (int(input()))
+    for i in range(len(library)):
+        if library[i]['id'] == num:
+            print(library[i])
+
+def book_rating():
+    counter = 0
+    for i in range(len(library)):
+        if library[i]['My rating from 0 to 10']>9:
+            counter+=1
+    print("Книг с рейтингом выше 9: ",counter)
+
+def upd_inf():
+    print("Введите номер книги, о которой информацию Вы хотите обновить: ")
+    num = int(input())
+    print("Обновляем информацию!",  sep="\n")
+    for i in range(len(library)):
+        if library[i]['id'] == num:
+            for key, value in library[i].items():
+                print(key, ":")
+                if type(library[i][key]) == int:
+                    library[i][key] = int(input())
+                if type(library[i][key]) == str:
+                     library[i][key] = input()
+
+            print(library[i])
+
+def delete_the_book(library):
+    print("Введите номер книги, которую Вы хотите удалить: ")
+    num = int(input())
+    for i in range(len(library)):
+        if library[i]['id'] == num:
+            del library[i]
+            break
     get_info(library)
+def main():
+    while True:
+        print("Функции, доступные Вам:","1 - Вывод информации о всех книгах",
+              "2 - Вывод информации о книге по введенному с клавиатуры номеру",
+              "3 -  Вывод количества книг, рейтинг который выше 9",
+              "4 - Обновление всей информации о книге по введенному номеру",
+              "5 - Удаление книги по номеру ",
+              "Введите ноль, чтобы закончить работу программы. ", sep="\n")
+        menu = int(input())
+        if menu == 1:
+            get_info(library)
+        elif menu == 2:
+            get_book_by_num()
+        elif menu == 3:
+            book_rating()
+        elif menu == 4:
+            upd_inf()
+        elif menu == 5:
+            delete_the_book(library)
+        elif menu == 0:
+            break
 
 if __name__=="__main__":
     main()

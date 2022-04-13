@@ -20,9 +20,6 @@ def max_mult(lst):
                 max_pr = temp
                 ans[0] = lst[i]
                 ans[1] = lst[j]
-    print(lst)
-    print(ans)
-    print(max_pr)
     return ans
 
 

@@ -9,18 +9,11 @@ import traceback
 
 def palindrom(num):
     a = str(num)
-    flag = 0
     length = len(a)-1
     for i in range(0, length//2+1):
-        if a[i] == a[length-i]:
-            flag = 0
-        else:
-            flag = 1
-            break
-    if flag == 0:
-        return True
-    else:
-        return False
+        if a[i] != a[length-i]:
+            return False
+    return True
 
 
 # Тесты
