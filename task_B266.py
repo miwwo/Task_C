@@ -8,8 +8,16 @@ import traceback
 
 
 def longest_word(string_of_words):
-    # Тело функции
-    return ""
+    string=string_of_words
+    l=string.split(' ')
+    ans = ''
+    length = 0
+    for i in range(len(l)):
+        temp=len(l[i])
+        if temp>=length:
+            length=temp
+            ans=l[i]
+    return ans
 
 
 # Тесты

@@ -20,3 +20,79 @@
 Предусмотреть хотя бы в 3 местах обработку возможных исключений.
 В каждом модуле провести подробное тестирование всех создаваемых объектов и функций.
 """
+
+class Person:
+    def __init__(self, name, surname, age):
+        self.name = name
+        self.surname = surname
+        self.age = age
+
+class Student(Person):
+    def __init__(self, name, surname, age, clas):
+        Person.__init__(self, name, surname, age)
+        self.clas = clas
+        self.journal = {}
+
+    def addmark(self,subject, date, mark):
+        self.journal[subject] = {date:mark}
+        print("Вы успешно добавили запись в дневник! ",self.journal)
+
+    def getmarks(self,subject):
+        print("Введите название предмета: ")
+        subj = input()
+        for x in self.journal:
+            if x == subj:
+                print(x,":",self.journal[x])
+#def Teacther(Person):
+
+def student():
+    print("Введите имя: ")
+    name = input()
+    print("Введите фамилию: ")
+    surname = input()
+    print("Введите возраст: ")
+    age = int(input())
+    print("Введите класс: ")
+    clas = int(input())
+    Student.__init__(name, surname, age, clas)
+    print("Функции, доступные Вам для работе с учеником:",
+          "1 - Добавить отметку",
+          "2 - Вывести все отметки по определенному предмету",
+          "3 - Форматированная печать всего дневника",
+          "Введите ноль, чтобы закончить работу программы. ", sep="\n")
+    menu = int(input())
+    while True:
+        if menu == 1:
+            print("Введите название предмета: ")
+            subject = input()
+            print("Введите дату получения отметки: ")
+            date = input()
+            print("Введите отметку: ")
+            mark = int(input())
+            Student.addmark(subject, date, mark)
+
+       # elif menu == 2:
+        #elif menu == 3:
+        #elif menu == 0:
+           # break
+
+
+def main():
+    while True:
+        print("Функции, доступные Вам:",
+              "1 - Добавить ученика",
+              "2 - Добавить учителя",
+              "3 - Добавить класс",
+              "Введите ноль, чтобы закончить работу программы. ", sep="\n")
+        menu = int(input())
+        if menu == 1:
+            student()
+        #elif menu == 2:
+
+        #elif menu == 3:
+
+        #elif menu == 0:
+            #break
+
+if __name__=="__main__":
+    main()
