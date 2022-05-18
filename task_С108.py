@@ -20,6 +20,20 @@
 Предусмотреть хотя бы в 3 местах обработку возможных исключений.
 В каждом модуле провести подробное тестирование всех создаваемых объектов и функций.
 """
+students = []
+teachers = []
+classes = []
+
+def info():
+    print("Введите имя: ")
+    name = input()
+    print("Введите фамилию: ")
+    surname = input()
+    print("Введите возраст: ")
+    age = int(input())
+    print("Введите класс: ")
+    clas = int(input())
+    return name, surname, age, clas
 
 class Person:
     def __init__(self, name, surname, age):
@@ -33,51 +47,125 @@ class Student(Person):
         self.clas = clas
         self.journal = {}
 
-    def addmark(self,subject, date, mark):
-        self.journal[subject] = {date:mark}
-        print("Вы успешно добавили запись в дневник! ",self.journal)
+    def __str__(self):
+        s = "Clas: {} \n{} {}, age: {}".format(self.clas, self.surname, self.name, self.age)
+        return s
 
-    def getmarks(self,subject):
-        print("Введите название предмета: ")
-        subj = input()
+    def addmark(self,subject, date, mark):
+        if subject in self.journal.keys():
+            self.journal[subject].append({date:mark})
+        else:
+            self.journal[subject] = []
+            self.journal[subject].append({date: mark})
+        print("Вы успешно добавили запись в дневник! ")
+
+    def getmarks(self, subject):
         for x in self.journal:
-            if x == subj:
-                print(x,":",self.journal[x])
-#def Teacther(Person):
+            if x == subject:
+                print(x, ":", self.journal[x])
+
+    def get_journal(self):
+        print("Журнал ученика: ", self.surname, self.name)
+        for x in self.journal.keys():
+            s = f"{x}: {self.journal[x]}\n"
+            s = str(s)
+            s = s.replace('{','Дата: ')
+            s = s.replace('}','')
+            s = s.replace('[','')
+            s = s.replace(']','')
+            s = s.replace("':", ' / Отметка:')
+            s = s.replace("'",'')
+            print(s)
+
+
+def Teacher(Person):
+    def __init__(self, name, surname, age, clas, subjects):
+        Person.__init__(self, name, surname, age)
+        self.clas = clas
+        self.subjects = {}
+
+    def addsub(self):
+        print("Список номер класса: ")
+        num = int(input())
+        for x in self.subjects:
+                print(x, ":", self.subjects[x])
+        print("Введите название предмета, который хотите добавить:")
+        new_sub = input()
+        if num in self.subjects.keys():
+            self.subjects[num].append({num:new_sub})
+        else:
+            self.journal[num] = []
+            self.journal[num].append({num: new_sub})
+
+    def change_clas(self):
+        print("Классы:")
+        for x in self.subjects:
+            print(x, ":", self.subjects[x])
+        print("Введите номер кабинета, который хотите поменять: ")
+        old_clas=int(input())
+        print("Введите новый номер кабинета: ")
+        new_clas = int(input())
+        for x in self.subjects:
+            if x==old_clas:
+                self.subjects=new_clas
+        print("Вы изменили номер кабинета!")
+        for x in self.subjects:
+            print(x)
+
+    def del_sub(self):
+        print("Предметы, преподаваемые в классе:")
+        for x in self.subjects.keys():
+            s = f"{x}: {self.subjects[x]}\n"
+            s = str(s)
+            s = s.replace('{', '')
+            s = s.replace('}', '')
+            s = s.replace('[', '')
+            s = s.replace(']', '')
+            s = s.replace("'", '')
+            print(s)
+        print("Введите название предмета, который хотите удалить:")
+        sub = input()
+        for x in self.subjects:
+            if x == sub:
+                print(x, ":", self.journal[x])
 
 def student():
-    print("Введите имя: ")
-    name = input()
-    print("Введите фамилию: ")
-    surname = input()
-    print("Введите возраст: ")
-    age = int(input())
-    print("Введите класс: ")
-    clas = int(input())
-    Student.__init__(name, surname, age, clas)
-    print("Функции, доступные Вам для работе с учеником:",
-          "1 - Добавить отметку",
-          "2 - Вывести все отметки по определенному предмету",
-          "3 - Форматированная печать всего дневника",
-          "Введите ноль, чтобы закончить работу программы. ", sep="\n")
-    menu = int(input())
+    inf = info()
+    stdnt = Student(inf[0], inf[1], inf[2], inf[3])
+    students.append(stdnt.__str__())
     while True:
-        if menu == 1:
+        print("Функции, доступные Вам для работе с учеником:",
+              "1 - Добавить отметку",
+              "2 - Вывести все отметки по определенному предмету",
+              "3 - Форматированная печать всего дневника",
+              "Введите ноль, чтобы закончить работу программы. ", sep="\n")
+        menu1 = int(input())
+        if menu1 == 1:
             print("Введите название предмета: ")
             subject = input()
             print("Введите дату получения отметки: ")
             date = input()
             print("Введите отметку: ")
             mark = int(input())
-            Student.addmark(subject, date, mark)
+            stdnt.addmark(subject, date, mark)
+            students[len(students)-1] = stdnt.__str__()
+        elif menu1 == 2:
+            print("Введите название предмета: ")
+            subj = input()
+            stdnt.getmarks(subj)
+        elif menu1 == 3:
+            stdnt.get_journal()
+        elif menu1 == 0:
+           break
 
-       # elif menu == 2:
-        #elif menu == 3:
-        #elif menu == 0:
-           # break
+def teacher():
+    inf = info()
+    teachere = Teacher(inf[0], inf[1], inf[2], inf[3])
+    teachers.append(teachere.__str__())
 
-
+    
 def main():
+    students_counter = len(students)
     while True:
         print("Функции, доступные Вам:",
               "1 - Добавить ученика",
@@ -87,12 +175,14 @@ def main():
         menu = int(input())
         if menu == 1:
             student()
-        #elif menu == 2:
+
+        elif menu == 2:
+            teacher()
 
         #elif menu == 3:
 
-        #elif menu == 0:
-            #break
+        elif menu == 0:
+            break
 
 if __name__=="__main__":
     main()
