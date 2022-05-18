@@ -8,7 +8,6 @@
 
 from Student import Student
 from Teacher import Teacher
-import pickle
 
 class Class(Student, Teacher):
     def __init__(self, n_clas, list_students, clas_teacher):
@@ -47,6 +46,7 @@ class Class(Student, Teacher):
             s = s + str(j) + ' - ' + str(self.main_clas[j]) + '\n'
         return s
 
+
     def file(self, address):
         f = open(address, "w")
         f.writelines(f"Class №{self.n_clas}\nClass teacher:{self.clas_teacher}\n\nStudents:\n")
@@ -73,7 +73,6 @@ student4 = Student('Кристина', "Мисина", 14, 9)
 student4.add_mark('Матеша', 5, '1/1')
 clas_teacher = Teacher('Людмила', 'Трысечкина', 45, '216', ['ИЗО'])
 clas_teacher.add_subj('Информатика')
-#print(clas_teacher.subjects)
 list_students = []
 list_students += student1, student2, student3, student4
 main_class = Class(7, list_students, clas_teacher)
@@ -81,10 +80,8 @@ main_class = Class(7, list_students, clas_teacher)
 student5 = Student('Мария', "Кирова", 15, 9)
 #main_class - student1
 #main_class + student5
-main_class.__setitem__(2, student5)
-main_class.__len__()
-with open('data.pickle', 'wb') as f:
-    pickle.dump(main_class, f)
+#main_class.__setitem__(2, student5)
+#main_class.__len__()
 main_class.file('fifile.txt')
 """try:
     print("Введите индекс ученика, которого хотите удалить:")
