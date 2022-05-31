@@ -1,78 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
 import re
-
-# root = Tk()
-#
-#
-# def Hello(event):
-#     print( "Yet another hello world")
-#
-#
-# btn = Button(root,                  #родительское окно
-#              text="Click me",       #надпись на кнопке
-#              width=30,height=5,     #ширина и высота
-#              bg="white",fg="black") #цвет фона и надписи
-# btn.bind("<Button-1>", Hello)       #при нажатии ЛКМ на кнопку вызывается функция Hello
-# btn.pack()                          #расположить кнопку на главном окне
-# root.mainloop()
-
-
-
-
-"""def Quit(ev):
-    global root
-    root.destroy()
-
-
-def LoadFile(ev):
-    fn = filedialog.Open(root, filetypes=[('*.txt files', '.txt')]).show()
-    if fn == '':
-        return
-    textbox.delete('1.0', 'end')
-    textbox.insert('1.0', open(fn, 'rt').read())
-
-
-def SaveFile(ev):
-    fn = filedialog.SaveAs(root, filetypes=[('*.txt files', '.txt')]).show()
-    if fn == '':
-        return
-    if not fn.endswith(".txt"):
-        fn += ".txt"
-    open(fn, 'wt').write(textbox.get('1.0', 'end'))
-
-
-root = Tk()
-
-panelFrame = Frame(root, height=60, bg='gray')
-textFrame = Frame(root, height=340, width=600)
-
-panelFrame.pack(side='top', fill='x')
-textFrame.pack(side='bottom', fill='both', expand=1)
-
-textbox = Text(textFrame, font='Arial 14', wrap='word')
-scrollbar = Scrollbar(textFrame)
-
-scrollbar['command'] = textbox.yview
-textbox['yscrollcommand'] = scrollbar.set
-
-textbox.pack(side='left', fill='both', expand=1)
-scrollbar.pack(side='right', fill='y')
-
-loadBtn = Button(panelFrame, text='Load')
-saveBtn = Button(panelFrame, text='Save')
-quitBtn = Button(panelFrame, text='Quit')
-
-loadBtn.bind("<Button-1>", LoadFile)
-saveBtn.bind("<Button-1>", SaveFile)
-quitBtn.bind("<Button-1>", Quit)
-
-loadBtn.place(x=10, y=10, width=40, height=40)
-saveBtn.place(x=60, y=10, width=40, height=40)
-quitBtn.place(x=110, y=10, width=40, height=40)
-
-root.mainloop()"""
-
 from datetime import *
 from tkinter import *
 from tkinter.ttk import Notebook, Frame, Combobox, Radiobutton
@@ -105,19 +33,19 @@ def kurs(country,date):
     for node in nodeArray:
         childList = node.childNodes
         for child in childList:
-            if child.nodeName == country:
-                countryy = child.childNodes[0].nodeValue
-            if child.nodeName == "Value":
-                value = child.childNodes[0].nodeValue
-                break
-        return value
+            if child.nodeName == "Name":
+                if child.childNodes[0].nodeValue == country:
+                    for childd in childList:
+                        if childd.nodeName == "Value":
+                            value = childd.childNodes[0].nodeValue
+    return value
 
 def graf():
     periodd = ch_period.get()
     country = country_3.get()
     if per.get()==1:
         matplotlib.use('TkAgg')
-        fig = matplotlib.pyplot.figure()
+        fig = matplotlib.pyplot.figure(figsize=(10, 4))
         canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig,master = grafic)
         raz = timedelta(days = 1)
         plot_widget = canvas.get_tk_widget()
@@ -131,8 +59,9 @@ def graf():
             k = kurs(country,temp1)
             k = k.replace(',','.')
             k = float(k)
-            x.append(datetime.strftime(temp1, "%d%m"))
-            y1 = round(k)
+            print(k)
+            x.append(datetime.strftime(temp1, "%d.%b"))
+            y1 = round(k,2)
             y.append(y1)
             temp1+=raz
         fig.clear()
@@ -155,8 +84,8 @@ def graf():
             k = kurs(country, temp1)
             k = k.replace(',', '.')
             k = float(k)
-            x.append(datetime.strftime(temp1, "%d.%m"))
-            y1 = round(k)
+            x.append(datetime.strftime(temp1, "%d"))
+            y1 = round(k,2)
             y.append(y1)
             temp1 += raz
         fig.clear()
@@ -167,7 +96,7 @@ def graf():
         matplotlib.use('TkAgg')
         fig = matplotlib.pyplot.figure(figsize=(10, 4))
         canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=grafic)
-        raz = timedelta(days=6.5)
+        raz = timedelta(weeks = 3)
         plot_widget = canvas.get_tk_widget()
         fig.clear()
         x = []
@@ -180,17 +109,16 @@ def graf():
             if k!=None:
                 k = k.replace(',', '.')
                 k = float(k)
-                x.append(datetime.strftime(temp1, "%d.%m"))
-                y1 = round(k)
+                x.append(datetime.strftime(temp1, "%d.%m.%y"))
+                y1 = round(k,2)
                 y.append(y1)
                 temp1 += raz
-        fig.clear()
         matplotlib.pyplot.plot(x, y)
         matplotlib.pyplot.grid()
         plot_widget.grid(row=5, column=5)
     if per.get() == 4:
         matplotlib.use('TkAgg')
-        fig = matplotlib.pyplot.figure(figsize=(12, 4))
+        fig = matplotlib.pyplot.figure(figsize=(10, 4))
         canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=grafic)
         raz = timedelta(weeks=4.4)
         plot_widget = canvas.get_tk_widget()
@@ -204,12 +132,12 @@ def graf():
             k = kurs(country, temp1)
             k = k.replace(',', '.')
             k = float(k)
-            x.append(datetime.strftime(temp1, "%B.%Y"))
-            y1 = round(k)
+            x.append(datetime.strftime(temp1, "%b.%y"))
+            y1 = round(k,2)
             y.append(y1)
             temp1 += raz
         fig.clear()
-        matplotlib.pyplot.plot(x, y)
+        matplotlib.pyplot.plot(x, y,'--')
         matplotlib.pyplot.grid()
         plot_widget.grid(row=5, column=5)
 

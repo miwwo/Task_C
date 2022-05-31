@@ -27,10 +27,9 @@ def main():
 def pics(user_id,weather):
     upload = VkUpload(vk_session)
     attachments = []
-    image = requests.get("https://openweathermap.org/weather-conditions", stream=True)
+    page = requests.get("https://openweathermap.org/weather-conditions")
     soup = BeautifulSoup(page.text, "html.parser")
-    result = soup.find('a',id="Weather-Condition-Codes-2").\
-    findAll()  # получить ссылки
+    result = soup.find
     for x in result:
         print(x)
     # photo = upload.photo_messages(photos=image.raw)[0]
