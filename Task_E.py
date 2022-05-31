@@ -73,7 +73,7 @@ quitBtn.place(x=110, y=10, width=40, height=40)
 
 root.mainloop()"""
 
-from datetime import datetime, timedelta, date
+from datetime import *
 from tkinter import *
 from tkinter.ttk import Notebook, Frame, Combobox, Radiobutton
 import urllib.request
@@ -83,7 +83,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates
 
 
-# 4 - Valute, 3 - country, 2 - Nominal
 def parsing(date):
     response = urllib.request.urlopen("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datetime.strftime(date, "%d/%m/%Y"))
     dom = xml.dom.minidom.parse(response)
@@ -97,7 +96,8 @@ def parsing(date):
             if child.nodeName == "Value":
                 valutues.append(child.childNodes[0].nodeValue)
     return countries,valutues
-def kurs(country):
+
+def kurs(country,date):
     response = urllib.request.urlopen("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datetime.strftime(date, "%d/%m/%Y"))
     dom = xml.dom.minidom.parse(response)
     dom.normalize()
@@ -106,9 +106,174 @@ def kurs(country):
         childList = node.childNodes
         for child in childList:
             if child.nodeName == country:
-                countries.append(child.childNodes[0].nodeValue)
+                countryy = child.childNodes[0].nodeValue
             if child.nodeName == "Value":
-                valutues.append(child.childNodes[0].nodeValue)
+                value = child.childNodes[0].nodeValue
+                break
+        return value
+
+def graf():
+    periodd = ch_period.get()
+    country = country_3.get()
+    if per.get()==1:
+        matplotlib.use('TkAgg')
+        fig = matplotlib.pyplot.figure()
+        canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig,master = grafic)
+        raz = timedelta(days = 1)
+        plot_widget = canvas.get_tk_widget()
+        fig.clear()
+        x = []
+        y = []
+        periodd=re.split(' - ',periodd)
+        temp1 = datetime.strptime(periodd[1],"%d/%m/%Y")
+        temp2 = datetime.strptime(periodd[0],"%d/%m/%Y")
+        while(temp1!=temp2+raz):
+            k = kurs(country,temp1)
+            k = k.replace(',','.')
+            k = float(k)
+            x.append(datetime.strftime(temp1, "%d%m"))
+            y1 = round(k)
+            y.append(y1)
+            temp1+=raz
+        fig.clear()
+        matplotlib.pyplot.plot(x,y)
+        matplotlib.pyplot.grid()
+        plot_widget.grid(row = 5,column = 5)
+    if per.get() == 2:
+        matplotlib.use('TkAgg')
+        fig = matplotlib.pyplot.figure(figsize=(10, 4))
+        canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=grafic)
+        raz = timedelta(days=1)
+        plot_widget = canvas.get_tk_widget()
+        fig.clear()
+        x = []
+        y = []
+        periodd = re.split(' - ', periodd)
+        temp1 = datetime.strptime(periodd[1], "%d/%m/%Y")
+        temp2 = datetime.strptime(periodd[0], "%d/%m/%Y")
+        while (temp1 != temp2 + raz):
+            k = kurs(country, temp1)
+            k = k.replace(',', '.')
+            k = float(k)
+            x.append(datetime.strftime(temp1, "%d.%m"))
+            y1 = round(k)
+            y.append(y1)
+            temp1 += raz
+        fig.clear()
+        matplotlib.pyplot.plot(x, y)
+        matplotlib.pyplot.grid()
+        plot_widget.grid(row=5, column=5)
+    if per.get() == 3:
+        matplotlib.use('TkAgg')
+        fig = matplotlib.pyplot.figure(figsize=(10, 4))
+        canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=grafic)
+        raz = timedelta(days=6.5)
+        plot_widget = canvas.get_tk_widget()
+        fig.clear()
+        x = []
+        y = []
+        periodd = re.split(' - ', periodd)
+        temp1 = datetime.strptime(periodd[1], "%d/%m/%Y")
+        temp2 = datetime.strptime(periodd[0], "%d/%m/%Y")
+        while (temp1 < temp2):
+            k = kurs(country, temp1)
+            if k!=None:
+                k = k.replace(',', '.')
+                k = float(k)
+                x.append(datetime.strftime(temp1, "%d.%m"))
+                y1 = round(k)
+                y.append(y1)
+                temp1 += raz
+        fig.clear()
+        matplotlib.pyplot.plot(x, y)
+        matplotlib.pyplot.grid()
+        plot_widget.grid(row=5, column=5)
+    if per.get() == 4:
+        matplotlib.use('TkAgg')
+        fig = matplotlib.pyplot.figure(figsize=(12, 4))
+        canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=grafic)
+        raz = timedelta(weeks=4.4)
+        plot_widget = canvas.get_tk_widget()
+        fig.clear()
+        x = []
+        y = []
+        periodd = re.split(' - ', periodd)
+        temp1 = datetime.strptime(periodd[1], "%d/%m/%Y")
+        temp2 = datetime.strptime(periodd[0], "%d/%m/%Y")
+        while (temp1 < temp2 + raz):
+            k = kurs(country, temp1)
+            k = k.replace(',', '.')
+            k = float(k)
+            x.append(datetime.strftime(temp1, "%B.%Y"))
+            y1 = round(k)
+            y.append(y1)
+            temp1 += raz
+        fig.clear()
+        matplotlib.pyplot.plot(x, y)
+        matplotlib.pyplot.grid()
+        plot_widget.grid(row=5, column=5)
+
+
+
+def period():
+    if per.get()==1:
+        periodscheck=[]
+        now = date.today()
+        temp = now
+        delta = timedelta(weeks = 1)
+        for i in range(4):
+            string = ''
+            string = temp.strftime("%d/%m/%Y") + ' - '
+            temp = temp - delta
+            string+=datetime.strftime(temp,"%d/%m/%Y")
+            periodscheck.append(string)
+        ch_period['values'] = periodscheck
+    if per.get()==2:
+        periodscheck = []
+        now = date.today()
+        temp = now
+        delta = timedelta(weeks = 4.4)
+        for i in range(4):
+            string = ''
+            string = temp.strftime("%d/%m/%Y") + ' - '
+            temp = temp - delta
+            string += datetime.strftime(temp, "%d/%m/%Y")
+            periodscheck.append(string)
+        ch_period['values'] = periodscheck
+    if per.get()==3:
+        periodscheck = []
+        now = date.today()
+        temp = now
+        for i in range(4):
+            ost = int(datetime.strftime(temp, "%m")) % 3
+            delta = timedelta(weeks=ost * 4.4)
+            string = ''
+            temp = temp - delta
+            string = temp.strftime("%d/%m/%Y") + ' - '
+            delta = timedelta(weeks=13.2)
+            temp = temp - delta
+            string += datetime.strftime(temp, "%d/%m/%Y")
+            periodscheck.append(string)
+        ch_period['values'] = periodscheck
+    if per.get()==4:
+        periodscheck = []
+        now = date.today()
+        temp = now
+        delta = timedelta(weeks = 52)
+        for i in range(4):
+            string = ''
+            string = temp.strftime("%d/%m/%Y") + ' - '
+            temp = temp - delta
+            string += datetime.strftime(temp, "%d/%m/%Y")
+            periodscheck.append(string)
+        ch_period['values'] = periodscheck
+
+
+
+
+
+
+
 
 def convert():
     x = country_1.get()
@@ -163,16 +328,20 @@ set3.grid(row = 0, column = 2, ipadx = 25)
 country_3 = Combobox(grafic)
 country_3.grid(row=1, column=0, padx=10, pady=10, ipadx=25)
 country_3['values'] = countries
-period1 = Radiobutton(grafic, text = 'Неделя', value = 1)
+per = IntVar()
+periodscheck=[]
+period1 = Radiobutton(grafic, text = 'Неделя', value = 1,variable= per,command=period)
 period1.grid(row = 1, column = 1)
-period2 = Radiobutton(grafic, text = 'Месяц', value = 2)
+period2 = Radiobutton(grafic, text = 'Месяц', value = 2,variable= per, command=period)
 period2.grid(row = 2, column = 1)
-period3 = Radiobutton(grafic, text = 'Квартал', value = 3)
+period3 = Radiobutton(grafic, text = 'Квартал', value = 3,variable= per,command=period)
 period3.grid(row = 3, column = 1, pady = 10)
-period4 = Radiobutton(grafic, text = 'Год', value = 4)
+period4 = Radiobutton(grafic, text = 'Год', value = 4,variable= per, command=period)
 period4.grid(row = 4, column = 1)
 ch_period = Combobox(grafic)
-ch_period.grid(row=1, column=2, padx=10, pady=10, ipadx=25)
+ch_period.grid(row=1, column=2, padx=10, pady=10, ipadx=25,)
+draw = Button(grafic, text = "Нарисовать график!",command = graf)
+draw.grid(row = 4, column = 0, padx = 10, pady = 10, ipadx = 15)
 
 
 

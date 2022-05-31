@@ -9,18 +9,18 @@ from datetime import datetime
 
 
 
-def log(key, self = "self", inf = "inf", func="func"):
+def log(key,inf = "inf", self = "self", func="func"):
     f = open("log.txt", "a", encoding="utf-8")
     if key == "CRE":
         f.write(key + "---" + datetime.now().strftime("%d/%m/%Y %H:%M") + "---" + f"создано {self}.\n")
     elif key == "INF":
-        if inf == "del":
+        if inf == "delete":
             f.write(key + "---" + datetime.now().strftime("%d/%m/%Y %H:%M") + "---" + f"удалён {self} методом {func}.\n")
         elif inf == "add":
             f.write(key + "---" + datetime.now().strftime("%d/%m/%Y %H:%M") + "---" + f"добавлен {self} методом {func}.\n")
-        elif inf == "pr":
+        elif inf == "print":
             f.write(key + "---" + datetime.now().strftime("%d/%m/%Y %H:%M") + "---" + f"распечатан {self} методом {func}.\n")
-        elif inf == "ch":
+        elif inf == "change":
             f.write(key + "---" + datetime.now().strftime("%d/%m/%Y %H:%M") + "---" + f"изменен {self} методом {func}.\n")
     elif key == "ERR":
         f.write(key + "---" + datetime.now().strftime("%d/%m/%Y %H:%M") + "---" + f"сраболато исключение {self}.\n")

@@ -10,39 +10,39 @@ class Class(Student, Teacher):
         self.main_clas = []
         self.main_clas.append(self.clas_teacher)
         self.main_clas += self.list_students
-        log("CRE", "экземпляр класса", "__init__")
+        log("CRE",' ', "экземпляр класса Class", "__init__")
 
     def __len__(self):
-        log("INF", "количество", "pr", "__len__")
+        log("INF","print", "количество",  "__len__")
         print("Количество студентов:", len(self.list_students))
         return len(self.list_students)
 
     def __getitem__(self, index):
-        log("INF", "человек", "pr", "__getitem__")
+        log("INF","print", "человек",  "__getitem__")
         print("Человек по индексу[", index, "]:", self.main_clas[index])
 
     def __delitem__(self, index):
-        log("INF", "студент", "del", "__delitem__")
+        log("INF","delete", "студент", "__delitem__")
         self.main_clas.pop(index)
         return self.main_clas
 
     def __setitem__(self, index, person):
-        log("INF", "студент", "ch", "__setitem__")
+        log("INF", "change", "студент", "__setitem__")
         self.main_clas[index] = person
 
 
     def __sub__(self, student):
-        log("INF", "студент", "del", "__sub__")
+        log("INF", "delete", "студент", "__sub__")
         self.main_clas.remove(student)
         return self.main_clas
 
     def __add__(self, student):
-        log("INF", "студент", "add", "__add__")
+        log("INF","add", "студент", "__add__")
         self.main_clas.append(student)
         return self.main_clas
 
     def __str__(self):
-        log("INF", "класс", "pr", "__str__")
+        log("INF", "print","класс", "__str__")
         s = "Class №{}\nClass teacher:{}\nStudents:\n".format(self.n_clas, self.clas_teacher)
         for j in range(1, len(self.main_clas)):
             s = s + str(j) + ' - ' + str(self.main_clas[j]) + '\n'

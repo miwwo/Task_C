@@ -2,6 +2,8 @@ from ClassD import Class
 from Student import Student
 from Teacher import Teacher
 import pickle
+from log import log
+
 
 def fill_info():
     student1 = Student('Михаил', "Стручкин", 13, 9)
@@ -23,5 +25,37 @@ def main():
     main_class = fill_info()
     with open('data.pickle', 'wb') as file:
         pickle.dump(main_class, file)
+
+    with open('data.pickle', 'rb') as file:
+        classs = pickle.load(file)
+    print(classs)
+
+    classs.__getitem__(2)
+    classs.__len__()
+    try:
+        print("Введите индекс ученика, которого хотите удалить:")
+        index = int(input())
+        x = classs.__len__()
+        if index < 1 or index == 0:
+            raise ValueError("Индексы учеников идет от единицы!")
+        if index > x:
+            raise IndexError(f"Вы ввели индекс, который больше количества учеников, а именно больше: {x}\n")
+        classs.__delitem__(index)
+        print("Ученик по индексу[", index, "] удален!")
+        print(classs)
+    except ValueError as err:
+        log("ERR",'', err)
+        print(err, "\nПопробуйте еще раз!")
+        index = int(input())
+        classs.__delitem__(index )
+        print("Ученик по индексу[", index, "] удален!")
+        print(classs)
+    except IndexError as err:
+        log("ERR",'', err)
+        print(err, "\nПопробуйте еще раз!")
+        index = int(input())
+        classs.__delitem__(index)
+        print("Ученик по индексу[", index, "] удален!")
+        print(classs)
 if __name__=="__main__":
     main()
