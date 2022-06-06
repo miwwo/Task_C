@@ -6,13 +6,16 @@ import datetime
 import requests
 from bs4 import BeautifulSoup
 import pickle
+# import dateutil
 import json
 import os
 import openpyxl
+import random
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib
 import PIL.Image as Image
+import re
 from math import ceil, floor
 from range_key_dict import RangeKeyDict
 
@@ -25,35 +28,25 @@ class UserInfo:
         self.other_group = ""
         self.buf = []
 
-# время суток для погоды
+#для погоды
+# время суток
 day_time = RangeKeyDict({(5, 11): 0, (11, 16): 1, (16, 23): 2, (23, 24): 3, (0, 5): 3})
-day_name = {0: "утро", 1: "день", 2: "вечер", 3: "ночь"}
+day_name =  {0: "утро", 1: "день", 2: "вечер", 3: "ночь"}
 # характеристика ветра
-wind = RangeKeyDict(
-    {(0, 0.3): 'штиль',
-     (0.3, 1.6): 'тихий',
-     (1.6, 3.4): 'легкий',
-     (3.4, 5.5): 'слабый',
-     (5.5, 8): 'умеренный',
-     (8, 10.8): 'свежий',
-     (10.8, 13.9): 'сильный',
-     (13.9, 17.2): 'крепкий',
-     (17.2, 20.8): 'очень крепкий',
-     (20.8, 24.5): 'шторм',
-     (24.5, 28.5): 'сильный шотрм',
-     (28.5, 32.7): 'жестокий шторм',
-     (32.7, 200): 'ураган'}
-                    )
-wind_direction = RangeKeyDict(
-    {(0, 22.5):'северный',
-     (22.5, 67.5):'северо-восточный',
-     (67.5, 112.5):'восточный',
-     (112.5, 157.5):'юго-восточный',
-     (157.5, 202.5):'южный',
-     (202.5, 247.5):'юго-западный',
-     (247.5, 292.5):'западный',
-     (292.5, 337.5):'северо-западный',
-     (337.5, 360.1):'северный'})
+wind = RangeKeyDict({(0, 0.3): 'штиль', (0.3, 1.6): 'тихий',
+        (1.6, 3.4): 'легкий', (3.4, 5.5): 'слабый', (5.5, 8): 'умеренный',
+        (8, 10.8): 'свежий', (10.8, 13.9): 'сильный', (13.9, 17.2): 'крепкий',
+        (17.2, 20.8): 'очень крепкий', (20.8, 24.5): 'шторм', (24.5, 28.5): 'сильный шотрм',
+        (28.5, 32.7): 'жестокий шторм', (32.7, 200): 'ураган'})
+wind_direction = RangeKeyDict({(0, 22.5):'северный',
+(22.5, 67.5):'северо-восточный',
+(67.5, 112.5):'восточный',
+(112.5, 157.5):'юго-восточный',
+(157.5, 202.5):'южный',
+(202.5, 247.5):'юго-западный',
+(247.5, 292.5):'западный',
+(292.5, 337.5):'северо-западный',
+(337.5, 360.1):'северный'})
 #для коронавируса
 reg_dict = {}
 reg_list = []
@@ -64,10 +57,7 @@ for i in a:
     reg_list.append(' '.join(i.text.split()[1:]))
     reg_dict[' '.join(i.text.split()[1:])] = 'https://coronavirusstat.ru' + i.find('a').get('href')
 
-def keyboard_adapter(response):
-    if response == "":
-        keyboard = VkKeyboard(one_time=True)
-        keyboard.add_button('Начать', color=VkKeyboardColor.PRIMARY)
+def create_keyboard(response):
     if response == "name":
         keyboard = VkKeyboard(one_time=True)
         keyboard.add_button('Да', color=VkKeyboardColor.POSITIVE)
@@ -76,7 +66,7 @@ def keyboard_adapter(response):
         keyboard = keyboard.get_keyboard()
         vk.messages.send(
             user_id=id,
-            random_id=get_random_id(), message="Ответь...",
+            random_id=get_random_id(), message="Выберите пункт или отправьте сообщение",
             keyboard=keyboard)
     if response == "start":
         keyboard = VkKeyboard(one_time=True)
@@ -100,6 +90,8 @@ def keyboard_adapter(response):
         keyboard.add_line()
         keyboard.add_button('Какая неделя?', color=VkKeyboardColor.SECONDARY)
         keyboard.add_button('Какая группа?', color=VkKeyboardColor.SECONDARY)
+        # keyboard.add_line()
+        # keyboard.add_button('Закрыть клавиатуру', color=VkKeyboardColor.SECONDARY)
         keyboard = keyboard.get_keyboard()
         vk.messages.send(
             user_id=id,
@@ -115,7 +107,7 @@ def keyboard_adapter(response):
         vk.messages.send(
             user_id=id,
             random_id=get_random_id(),
-            message="Найдено несколько преподавателей, какого ты имели в виду?", keyboard=keyboard)
+            message="Найдено несколько преподавателей, какого вы имели в виду?", keyboard=keyboard)
     if response == "teach_raspis":
         keyboard = VkKeyboard(one_time=True)
         keyboard.add_button('сегодня', color=VkKeyboardColor.POSITIVE)
@@ -139,7 +131,7 @@ def keyboard_adapter(response):
         vk.messages.send(
             user_id=id,
             random_id=get_random_id(),
-            message="Выбери интересующий период ...", keyboard=keyboard)
+            message="Выберите интересующий период ...", keyboard=keyboard)
 def send_message(id, msg):
     try:
         vk.messages.send(
@@ -152,7 +144,7 @@ def send_message(id, msg):
 
 def parsing():
     for i in range (1,4):
-        if not os.path.isfile(f"shed{i}.xlsx"):
+        if not os.path.isfile(f"raspisanie{i}.xlsx"):
             page = requests.get("https://www.mirea.ru/schedule/")
             soup = BeautifulSoup(page.text, "html.parser")
             result = soup.find("div", {'class': "rasspisanie"}). \
@@ -160,20 +152,21 @@ def parsing():
                 find_parent("div"). \
                 find_parent("div"). \
                 find_all("a", class_="uk-link-toggle")[i - 1].get('href')
-            with open(f"shed{i}.xlsx", "wb") as table:
+            # find_all("a",class_="uk-link-toggle")     #"uk-card uk-card-default uk-card-body uk-card-small uk-text-center uk-box-shadow-hover-small")
+            with open(f"raspisanie{i}.xlsx", "wb") as table:
                 resp = requests.get(result)
                 table.write(resp.content)
 
 
 
-def is_group_name(msg): # ИКБО-09-21
+def is_group_name(msg): # ИКБО-08-21
     msg = msg.strip()
-    #book = openpyxl.load_workbook(f"shed{users[id].course}.xlsx")  # открытие файла
+    #book = openpyxl.load_workbook(f"raspisanie{users[id].course}.xlsx")  # открытие файла
     try:
-        book = openpyxl.load_workbook(f"shed{int(str(datetime.datetime.today())[:4]) - int('20' + msg[8:])}.xlsx")  # открытие файла
+        book = openpyxl.load_workbook(f"raspisanie{int(str(datetime.datetime.today())[:4]) - int('20' + msg[8:])}.xlsx")  # открытие файла
         sheet = book.active  # активный лист
         num_cols = sheet.max_column  # количество столбцов
-        num_rows = sheet.max_row  # количество строк
+        # num_rows = sheet.max_row  # количество строк
         for i in range(1, num_cols + 1):
             group = sheet.cell(row=2, column=i).value
             group = str(group).strip()
@@ -181,10 +174,11 @@ def is_group_name(msg): # ИКБО-09-21
                 return True
         return False
     except BaseException and ValueError:
-        send_message(id,"Ошибка, проверь ввод группы")
+        send_message(id,"Ошибка, проверьте ввод группы")
 
 
-def schedule(group):
+def raspisanie(group):  # получить полное расписание для группы
+    # create_keyboard("raspis")
     group = group.upper()
     group = group.strip()
     if os.path.isfile(f'{group}.json'):
@@ -193,15 +187,17 @@ def schedule(group):
             return group_days
     else:
         group_days = {}
+        #print('20' + group[8:])
         try:
-            book = openpyxl.load_workbook(f"shed{int(str(datetime.datetime.today())[:4]) - int('20' + group[8:])}.xlsx")
+            book = openpyxl.load_workbook(f"raspisanie{int(str(datetime.datetime.today())[:4]) - int('20' + group[8:])}.xlsx")  # открытие файла
         except BaseException and ValueError:
-            send_message(id, "Error..error..Файл не найден...")
+            send_message(id, "Ошибка, файл группы не найден")
             return
         book = openpyxl.load_workbook(
-            f"shed{int(str(datetime.datetime.today())[:4]) - int('20' + group[8:])}.xlsx")
-        sheet = book.active
-        num_cols = sheet.max_column
+            f"raspisanie{int(str(datetime.datetime.today())[:4]) - int('20' + group[8:])}.xlsx")  # открытие файла
+        sheet = book.active  # активный лист
+        num_cols = sheet.max_column  # количество столбцов
+        num_rows = sheet.max_row
         for g in range(1, num_cols + 1):
             f_group = sheet.cell(row=2, column=g).value
             f_group = str(f_group).strip()
@@ -214,6 +210,7 @@ def schedule(group):
                         daycolumn = g+o
                         break
                 for i in range(6):
+                    # cell = sheet.cell(row=4, column=g-5).value
                     strin += 12
                     day = sheet.cell(row=strin, column=daycolumn).value
                     lesson = []
@@ -231,13 +228,16 @@ def schedule(group):
                                 lesson[j] += ", " + str(el)
                     group_days[day] = lesson
                 break
+        #print(group_days)
         with open(f'{group}.json', 'w') as j:
             json.dump(group_days, j)
         return group_days
 
+
 def week_number(d=datetime.date.today()):
     s = int(d.strftime("%V")) - int(datetime.date(2022, 2, 9).strftime("%V")) + 1
     return s
+
 
 def week_day(d=datetime.datetime.today().weekday()):
     if d == 0:
@@ -260,22 +260,23 @@ def week_day(d=datetime.datetime.today().weekday()):
 
 def is_sunday(d=datetime.datetime.today().weekday()):
     if week_day(d) == "ВОСКРЕСЕНЬЕ":
-        send_message(id, "Куда ты сегодня собрался? Пар нет, залезай в еву..")
+        send_message(id, "В воскресенье пар нет")
         users[id].answering = ""
         return True
     else:
         return False
 
-def print_shed(d=datetime.datetime.today(), now = True, teacher =""):
+
+def print_raspis(d=datetime.datetime.today(),now = True,teacher = ""):
     if not teacher:
-        rasp_days = schedule(users[id].other_group)
+        rasp_days = raspisanie(users[id].other_group)
     else:
-        rasp_days = teacher_shed(teacher)
+        rasp_days = teacher_rasp(teacher)
     if week_number(d) % 2 != 0:
         if now:
             send_rasp = week_day(d.weekday()) + " " + d.strftime("%d.%m") + "\n"
         else:
-            send_rasp = "Нечетная неделя: \n"
+            send_rasp = "Нечётная неделя: \n"
         count = 0
         for i in range(0, 12, 2):
             count += 1
@@ -284,7 +285,7 @@ def print_shed(d=datetime.datetime.today(), now = True, teacher =""):
         if now:
             send_rasp = week_day(d.weekday()) + " " + d.strftime("%d.%m") + "\n"
         else:
-            send_rasp = "Четная неделя: \n"
+            send_rasp = "Чётная неделя: \n"
         count = 0
         for i in range(1, 12, 2):
             count += 1
@@ -298,18 +299,19 @@ def find_teacher(teacher):
     full_teacher = []
     for i in range(1,4):
         try:
-            book = openpyxl.load_workbook(f"shed{i}.xlsx")
+            book = openpyxl.load_workbook(f"raspisanie{i}.xlsx")
         except BaseException:
-            send_message(id,"Не удалось открыть таблицу..")
+            send_message(id,"Не удалось открыть таблицу")
             return
-        sheet = book.active
-        num_cols = sheet.max_column
+        sheet = book.active  # активный лист
+        num_cols = sheet.max_column  # количество столбцов
         for j in range(1,num_cols+1):
             cell = sheet.cell(row=3, column=j).value
             if cell == "ФИО преподавателя":
                 for o in range(4,76):
                     cell = sheet.cell(row=o, column=j).value
                     if cell:
+                        #print(teacher, cell, sep = " ")
                         if teacher in str(cell):
                             if full_teacher != [] and cell[cell.find(teacher):cell.find(teacher)+len(teacher) + 4] not in full_teacher:
                                 flag = True
@@ -319,24 +321,27 @@ def find_teacher(teacher):
     return full_teacher
 
 
-def teacher_shed(teacher):
+def teacher_rasp(teacher):
     rasp = {}
     if os.path.isfile(f'{teacher}.json'):
         with open(f'{teacher}.json', 'r') as j:
             rasp = json.load(j)
             return rasp
     for i in range(1, 4):
+        #print(1)
         try:
-            book = openpyxl.load_workbook(f"shed{i}.xlsx")
+            book = openpyxl.load_workbook(f"raspisanie{i}.xlsx")
         except BaseException:
-            send_message(id, "Не удалось открыть таблицу..")
+            send_message(id, "Не удалось открыть таблицу")
             return
-        book = openpyxl.load_workbook(f"shed{i}.xlsx")
-        sheet = book.active
-        num_cols = sheet.max_column
+        book = openpyxl.load_workbook(f"raspisanie{i}.xlsx")
+        sheet = book.active  # активный лист
+        num_cols = sheet.max_column  # количество столбцов
+        num_rows = sheet.max_row
         for g in range(1, num_cols + 1):
             cell = sheet.cell(row=3, column=g).value
             daycolumn = 0
+            lesson = []
             if cell == "ФИО преподавателя":
                 group = sheet.cell(row=2, column=g - 2).value
                 strin = -8
@@ -346,11 +351,14 @@ def teacher_shed(teacher):
                         daycolumn = g - o
                         break
                 for i in range(6):
+                    # cell = sheet.cell(row=4, column=g-5).value
                     strin += 12
+                    #print(daycolumn)
                     day = sheet.cell(row=strin, column=daycolumn).value
                     lesson = []
                     for j in range(12):
                         cell = sheet.cell(row=strin+j, column=g).value
+                        #print(teacher, cell)
                         if teacher in str(cell):
                             lesson.append(sheet.cell(row=j + strin, column=g-2).value)
                             el1 = sheet.cell(row=j + strin, column=g - 1).value
@@ -363,6 +371,8 @@ def teacher_shed(teacher):
                             lesson[j] += ", " + str(el)
                         else:
                             lesson.append("—")
+                        #if not lesson[j]:
+                         #   lesson[j] = "—"
                     if day in rasp:
                         for l in range(12):
                             if rasp[day][l] == "—":
@@ -374,22 +384,24 @@ def teacher_shed(teacher):
     return rasp
 
 
-def get_answer(ans_type):
+def recieve_answer(ans_type):
     if ans_type == "start_choosing":
         if message == "нет":
             users[id].name = " "
-            keyboard_adapter("start")
+            create_keyboard("start")
             users[id].answering = ""
         else:
-            send_message(id, "Скажи своё имя..")
+            send_message(id, "Как соизволите к вам обращаться?")
             users[id].answering = "name"
     if ans_type == "name":
         users[id].name = event.text
         users[id].answering = ""
-        send_message(id, "Я запомнила твоё имя, " + users[id].name + " ;)")
+        send_message(id, "Ваше имя внесено в базу данных, " + users[id].name)
         with open('data.pickle', 'wb') as f:
             pickle.dump(users, f)
         return
+    # if ans_type == "group":
+    #   users[id].group = message
     if ans_type == "group":
         if (int(message[0]) >= 1 and int(message[0]) <= 3):
             users[id].course = message[0]
@@ -397,21 +409,21 @@ def get_answer(ans_type):
         else:
             send_message(id, "Ошибка ввода, курс от 1 до 3, цифрами")
             send_message(id,
-                         "Введи свой курс и подразделение..\nНапример: 2 ИКБ0-09-21")
+                         "Введите свой курс обучения и группу через пробел (курс от 1 до 3 цифрами). Например:\n1 ИКБО-08-21")
             return
-        send_message(id, "Ищу тебя в списке..")
+        send_message(id, "Производится поиск...")
         if is_group_name(message[2:]):
             users[id].group = message[2:].upper()
             users[id].other_group = users[id].group
             send_message(id,
-                         "Нашла тебя! Выпишу себе твою группу, чтобы не потерять. Введи <расписание>")
+                         "Курс вашего обучения и ваша группа внесены в базу данных. Чтобы получить расписание, снова введите слово 'расписание'")
             users[id].answering = ""
             with open('data.pickle', 'wb') as f:
                 pickle.dump(users, f)
         else:
-            send_message(id, "Не смогла найти тебя..Повтори номер группы, пожалуйста")
+            send_message(id, "Группа не найдена, проверьте ввод")
             send_message(id,
-                         "Введи свой курс и подразделение..\nНапример: 1 ИКБО-09-21")
+                         "Введите свой курс обучения и группу через пробел (курс от 1 до 3 цифрами). Например:\n1 ИКБО-08-21")
         return
     if "wait_raspis" in ans_type:
         users[id].answering = ""
@@ -420,14 +432,14 @@ def get_answer(ans_type):
             if is_sunday():
                 return
             d = datetime.date.today()
-            send_rasp = print_shed(d, True, ans_type[11:])
+            send_rasp = print_raspis(d,True,ans_type[11:])
             send_message(id, send_rasp)
             users[id].other_group = users[id].group
         if message == "завтра":
             d = datetime.date.today() + datetime.timedelta(days=1)
             if is_sunday(d.weekday()):
                 return
-            send_rasp = print_shed(d, True, ans_type[11:])
+            send_rasp = print_raspis(d,True,ans_type[11:])
             send_message(id, send_rasp)
             users[id].other_group = users[id].group
         if message == "эту неделю":
@@ -435,7 +447,7 @@ def get_answer(ans_type):
             for j in range(7):
                 if week_day(d.weekday()) == "ПОНЕДЕЛЬНИК":
                     for i in range(6):
-                        send_rasp = print_shed(d, True, ans_type[11:])
+                        send_rasp = print_raspis(d,True,ans_type[11:])
                         send_message(id, send_rasp)
                         d += datetime.timedelta(days=1)
                     break
@@ -447,7 +459,7 @@ def get_answer(ans_type):
             for j in range(7):
                 if week_day(d.weekday()) == "ПОНЕДЕЛЬНИК":
                     for i in range(6):
-                        send_rasp = print_shed(d, True, ans_type[11:])
+                        send_rasp = print_raspis(d,True,ans_type[11:])
                         send_message(id, send_rasp)
                         d += datetime.timedelta(days=1)
                     break
@@ -466,28 +478,28 @@ def get_answer(ans_type):
                     w = datetime.datetime.today()
                     for j in range (7):
                         if week_day(w.weekday()) == d:
-                            send_rasp = print_shed(w, False)
+                            send_rasp = print_raspis(w,False)
                             send_message(id, send_rasp)
                             break
                         w += datetime.timedelta(days=1)
                     w += datetime.timedelta(days=7)
-                    send_rasp = print_shed(w, False)
+                    send_rasp = print_raspis(w,False)
                     send_message(id, send_rasp)
                     break
                 d = week_day(i+1)
 
             if not flag:
-                if message[8] == "-" and message[11] == "-": #икбо-09-21
+                if message[8] == "-" and message[11] == "-": #икбо-08-21
                     if is_group_name(message[3:]):
                         # print(int(str(datetime.datetime.today())[:4]) - int("20" + message[12:]))
                         users[id].answering = "wait_raspis"
                         send_message(id,"Расписание для группы " + message[3:].upper())
-                        keyboard_adapter("raspis")
+                        create_keyboard("raspis")
                         users[id].other_group = message[3:]
-                        schedule(message[3:])
+                        raspisanie(message[3:])
 
                     else:
-                        send_message(id,"Не смогла найти твою группу в списках..")
+                        send_message(id,"Группа не найдена")
                         return
     if ans_type == "teacher":
         users[id].answering = ""
@@ -499,33 +511,33 @@ def get_answer(ans_type):
         if len(teachers) > 1:
             users[id].answering = "some_teachers"
             users[id].buf = teachers
-            keyboard_adapter("teachers")
+            create_keyboard("teachers")
         else:
             #send_raspis = teacher_rasp(teachers[0])
             users[id].answering = 'wait_raspis' + teachers[0]
-            keyboard_adapter("teach_raspis")
+            create_keyboard("teach_raspis")
         return
     if ans_type == 'some_teachers':
         users[id].answering = ""
         #send_raspis = teacher_rasp(event.text)
         users[id].answering = 'wait_raspis' + event.text
-        keyboard_adapter("teach_raspis")
+        create_keyboard("teach_raspis")
         return
     if ans_type == "weather":
         if message == "сейчас":
             weather_now()
         elif message == "сегодня":
-            send_message(id,"Пытаюсь найти информацию..")
+            send_message(id,"Получение информации...")
             weather_today()
         elif message == "завтра":
-            send_message(id, "Подожди чуть-чуть! Сейчас перешлю тебе данные")
+            send_message(id, "Получение информации...")
             weather_tomorrow()
         elif message == "на 5 дней":
-            send_message(id, "Loading...")
-            weather_for_5()
+            send_message(id, "Получение информации...")
+            weather5()
         users[id].answering = ""
 
-
+#скопировал коронавирус у Насти, надо попытаться адаптировать или переписать
 def send_photo(user_id, img_req, message = None):
     upload = vk_api.VkUpload(vk_session)
     photo = upload.photo_messages(img_req)[0]
@@ -536,7 +548,7 @@ def send_photo(user_id, img_req, message = None):
     if message != None:
         post['message'] = message
     vk_session.method('messages.send', post)
-
+#статистика по ковиду в россии
 def corona_rus():
     page = requests.get('https://coronavirusstat.ru/country/russia/') # адрес страницы со статистикой
     soup = BeautifulSoup(page.text, "html.parser")
@@ -548,7 +560,7 @@ def corona_rus():
         information += number.find_next().text.lower() + ": " + number.text + " (" + i.contents[1].text.replace('(', 'за ') + '\n'
     corona_graph()
     send_photo(event.user_id, 'covid.png', information)
-
+# график
 def corona_graph():
     page = requests.get('https://coronavirusstat.ru/country/russia/') # адрес страницы со статистикой
     soup1 = BeautifulSoup(page.text, "html.parser")
@@ -582,7 +594,7 @@ def corona_graph():
     plt.legend()
     plt.grid(True)
     fig.savefig('covid.png')
-
+# статистика по региону
 def corona_reg(rname):
     reg_name = check_name(rname)
     if reg_name == -1:
@@ -596,7 +608,7 @@ def corona_reg(rname):
             number = i.find('b')
             information += number.find_next().text.lower() + ": " + number.text + " (" + i.contents[1].text.replace('(', 'за ') + '\n'
         send_message(event.user_id, information)
-
+ #name - название региона вводимое пользователем, ф-ия изменяет название таким образом, чтобы оно соответствовало названию из словаря с регионами
 def check_name(name):
     regions = []
     d = [ 'автономная обл.', 'обл.','край','республика','автономный округ', ')']
@@ -610,7 +622,7 @@ def check_name(name):
             if j in name.lower():
                 return(reg_list[i])
     return -1
-
+#конец скопированной части
 def weather_now():
     weather_response = requests.get('http://api.openweathermap.org/data/2.5/weather?q=moscow&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
     info = weather_response.json()
@@ -622,9 +634,8 @@ def weather_now():
     w += "\nДавление: " + str(round(info["main"]["pressure"]/1.333)) + " мм рт.ст., влажность: " + str(info["main"]["humidity"]) + "%"
     w += "\nВетер: " + wind[float(info['wind']['speed'])] + ", " + str(info['wind']['speed']) + " м/с, " +  wind_direction[float(info['wind']['deg'])]
     send_message(event.user_id, w)
-
 def weather_today():
-    w_res = requests.get('http://api.openweathermap.org/data/2.5/forecast?lat=55.7522&lon=37.6156&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
+    w_res = requests.get('https://api.openweathermap.org/data/2.5/forecast?q=moscow&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
     info = w_res.json()
     icons = []
     weather_info = [0]*4
@@ -654,9 +665,9 @@ def weather_today():
     send_photo(event.user_id, "today.png", "Погода в Москве сегодня")
     send_message(event.user_id, br_inf)
     send_message(event.user_id, all_inf)
-
+# погода завтра
 def weather_tomorrow():
-    w_res = requests.get('http://api.openweathermap.org/data/2.5/forecast?lat=55.7522&lon=37.6156&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
+    w_res = requests.get('https://api.openweathermap.org/data/2.5/forecast?q=moscow&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
     info = w_res.json()
     icons = []
     weather_info = [0]*4
@@ -686,11 +697,12 @@ def weather_tomorrow():
     send_photo(event.user_id, "today.png", "Погода в Москве завтра")
     send_message(event.user_id, br_inf)
     send_message(event.user_id, all_inf)
-
-def weather_for_5():
-    w_res = requests.get('http://api.openweathermap.org/data/2.5/forecast?lat=55.7522&lon=37.6156&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
+# прогноз погоды на 5 дней
+def weather5():
+    w_res = requests.get('https://api.openweathermap.org/data/2.5/forecast?q=moscow&appid=cabb0d1a47e3748838dbe5345d78caa9&units=metric&lang=ru')
     info = w_res.json()
     days = {}
+    br_inf, all_inf = '', ''
     for i in range(5):
         days[(datetime.date.today() + datetime.timedelta(days = i)).strftime('%Y-%m-%d')] = [0, 0]
     for i in range(len(info['list'])):
@@ -741,75 +753,80 @@ if os.path.isfile('data.pickle'):
 else:
     users = {}
 longpoll = VkLongPoll(vk_session)
-keyboard_adapter("")
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW and event.to_me:
         id = event.user_id  # получаем айди пользователя чтобы отправлять ему сообщения
         message = event.text.lower()  # получаем сообщение со строчными буквами чтобы отвечать на команды
-        print('New request from id: {}, text: {}'.format(event.user_id, event.text))
+        print('New from {}, text = {}'.format(event.user_id, event.text))
         if not (id in users):  # если нет в базе данных
             users[id] = UserInfo()
             with open('data.pickle', 'wb') as f:
                 pickle.dump(users, f)
-        if message == "какая неделя?":
+        if message == "выключить эхо":
+            if users[id].answering == "echo":
+                users[id].answering = ""
+            send_message(id, "Эхо выключено")
+        elif users[id].answering == "echo":
+            send_message(id, event.text)
+        elif message == "какая неделя?":
             send_message(id, f"Сейчас идёт {week_number()} неделя")
             users[id].answering = ""
         elif message == "какая группа?":
-            send_message(id, users[id].other_group.upper())
+            send_message(id, f"Расписание для группы {users[id].other_group.upper()}")
             users[id].answering = ""
         elif users[id].answering != "":
-            get_answer(users[id].answering)
-        elif message == "привет":
-            send_message(id,"Привет..Ты можешь написать мне 'помоги' и узнать список моих команд")
+            recieve_answer(users[id].answering)
         elif message == "начать":
             send_message(id,
-                         "Привет..Я Аянами Рей, а ты?")
-            send_message(id, "Ты можешь написать мне 'помоги' и узнать список моих команд")
+                         "Здравствуйте! Я – F-бот. Чтобы узнать, что я могу, напишите 'помощь' или выберите пункт из меню.")
             if users[id].name == "":
                 send_message(id,
-                             "Мне запомнить твоё имя?")
-                keyboard_adapter("name")
+                             "Но сначала позвольте спросить, запоминать ли ваше имя?")
+                create_keyboard("name")
                 users[id].answering = "start_choosing"
             else:
-                keyboard_adapter("start")
+                create_keyboard("start")
         elif users[id].name == "":
-            send_message(id, "Привет. Ты Аянами Рей? Я не знаю, твоего имени..")
+            send_message(id, "Здравствуйте! Вашего имени нет в базе данных. Как соизволите к вам обращаться?")
             users[id].answering = "name"
+        elif message == "сменить имя":
+            send_message(id, "Как соизволите к вам обращаться?")
+            users[id].answering = "name"
+        elif message == "забудь меня":
+            del users[id]
+            send_message(id, "Вы были удалены из базы данных. Чтобы вас снова внесли, отправьте любое сообщение")
         elif message == "расписание":
             if users[id].course == "" or users[id].group == "":
                 send_message(id,
-                             "Введи номер своего курса и подразделения.\nНапример:3 ВВБО-02-19")
+                             "Введите свой курс обучения и группу через пробел (курс от 1 до 3 цифрами). Например:\n1 ИКБО-08-21")
                 users[id].answering = "group"
             else:
                 users[id].answering = "wait_raspis"
-                keyboard_adapter("raspis")
-        elif message == "помоги":
+                create_keyboard("raspis")
+        elif message == "помощь" or "что ты умеешь" in message or message == "команды":
             send_message(id,
-                         "Список команд Аянами Рей:\n"
-                         "☆начать – начало нашего знакомства\n"
-                         "☆бот [день недели] – я помогу тебе узнать расписание на определённый день недели\n"
-                         "☆бот [группа] – могу прислать расписание определённой группы\n"
-                         "☆погода – разузнаю для тебя, подходящие ли погодные условия в определенный день\n"
-                         "☆корона – статистика инородного вируса по России\n"
-                         "☆корона [регион] – статистика для определённого региона\n"
-                         "Можешь выбрать любую функцию, но лучше бы полезал в еву...")
+                         "На данный момент имеются следующие команды: \n'начать' – отправить приветственное сообщение; "
+                         "\n'забудь меня – удалить пользователя из базы данных; \n'сменить имя' – поменять имя, как я буду вас "
+                         "называть\n'бот [день недели]' – бот выдаёт расписание на определённый день недели\n'бот [группа]' – выдаёт расписание для определённой группы, например бот икбо-08-20 откроет меню для этой группы \n"
+                         "'погода' – прогноз погоды на определённый промежуток времени\n'корона' – статистика коронавируса по России \n'корона [регион]' – статистика для определённого региона ")
         elif "бот" in message:
             users[id].answering = "wait_raspis"
-            get_answer(users[id].answering)
+            recieve_answer(users[id].answering)
         elif "найти" in message:
             users[id].answering = "teacher"
-            get_answer(users[id].answering)
+            recieve_answer(users[id].answering)
         elif message == "корона":
             #corona_rus()
-            send_message(id,"Пытаюсь нарисовать график..Подожди чуть-чуть..")
+            send_message(id,"Попытка построить график...")
             try:
                 corona_rus()
             except AttributeError:
-                send_message(id, "Недостаточно информации..Сделай запрос снова попозже..")
+                send_message(id, "Не удалось получить информацию, попробуйте заново.")
         elif message.split(' ')[0] == "корона":
             corona_reg(' '.join(message.split(' ')[1:]))
         elif message == "погода":
-            keyboard_adapter("weather")
+            create_keyboard("weather")
             users[id].answering = "weather"
         else:
-            send_message(id, "Я не знаю таких команд..Напиши 'помоги',и я попробую что-то сделать, "  + users[id].name)
+            #send_message(id, "Привет, " + users[id].name)
+            send_message(id, "Команда не найдена, " + users[id].name)

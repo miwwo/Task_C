@@ -18,11 +18,8 @@ def parsing(date):
     nodeArray = dom.getElementsByTagName("Valute")
     for node in nodeArray:
         childList = node.childNodes
-        for child in childList:
-            if child.nodeName == "Name":
-                countries.append(child.childNodes[0].nodeValue)
-            if child.nodeName == "Value":
-                valutues.append(child.childNodes[0].nodeValue)
+        countries.append(childList[3].firstChild.nodeValue)
+        valutues.append(float((childList[4].firstChild.nodeValue).replace(",", ".")) / float(childList[2].firstChild.nodeValue))
     return countries,valutues
 
 def kurs(country,date):
@@ -33,12 +30,13 @@ def kurs(country,date):
     for node in nodeArray:
         childList = node.childNodes
         for child in childList:
-            if child.nodeName == "Name":
-                if child.childNodes[0].nodeValue == country:
-                    for childd in childList:
-                        if childd.nodeName == "Value":
-                            value = childd.childNodes[0].nodeValue
-    return value
+            if elemlist[3].firstChild.nodeValue == country:
+                return float((childList[4].firstChild.nodeValue).replace(",", ".")) / float(childList[2].firstChild.nodeValue)
+            # if child.nodeName == "Name":
+            #     if child.childNodes[0].nodeValue == country:
+            #         for childd in childList:
+            #             if childd.nodeName == "Value":
+            #                 value = childd.childNodes[0].nodeValue
 
 def graf():
     periodd = ch_period.get()
@@ -80,11 +78,15 @@ def graf():
         periodd = re.split(' - ', periodd)
         temp1 = datetime.strptime(periodd[1], "%d/%m/%Y")
         temp2 = datetime.strptime(periodd[0], "%d/%m/%Y")
-        while (temp1 != temp2 + raz):
+        while (temp1 != temp2):
             k = kurs(country, temp1)
             k = k.replace(',', '.')
             k = float(k)
-            x.append(datetime.strftime(temp1, "%d"))
+            x1 = datetime.strftime(temp1, "%d")
+            if x1 in x:
+                x.append(datetime.strftime(temp1, "%d."))
+            else:
+                x.append(x1)
             y1 = round(k,2)
             y.append(y1)
             temp1 += raz
@@ -96,7 +98,7 @@ def graf():
         matplotlib.use('TkAgg')
         fig = matplotlib.pyplot.figure(figsize=(10, 4))
         canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=grafic)
-        raz = timedelta(weeks = 3)
+        raz = timedelta(weeks = 1)
         plot_widget = canvas.get_tk_widget()
         fig.clear()
         x = []
@@ -109,7 +111,7 @@ def graf():
             if k!=None:
                 k = k.replace(',', '.')
                 k = float(k)
-                x.append(datetime.strftime(temp1, "%d.%m.%y"))
+                x.append(datetime.strftime(temp1, "%d.%m"))
                 y1 = round(k,2)
                 y.append(y1)
                 temp1 += raz
@@ -207,17 +209,31 @@ def convert():
     x = country_1.get()
     y = country_2.get()
     z = money.get()
-    x_index = countries.index(x)
-    x1 = valutues[x_index]
+    z = float(z)
     y_index = countries.index(y)
     y1 = valutues[y_index]
-    x1 = x1.replace(',','.')
-    y1 = y1.replace(',', '.')
-    x = float(x1)
-    y = float(y1)
-    z = float(z)
-    res = str(float((x*z)/y))
-    result.configure(text = res)
+    x_index = countries.index(x)
+    x1 = valutues[x_index]
+    print(x1, ' ', y1, ' ', z)
+    if x == "Рубль":
+        y_index = countries.index(y)
+        y1 = valutues[y_index]
+        res = z*y1
+        result.configure(text=res)
+
+    elif y == "Рубль":
+        x_index = countries.index(x)
+        x1 = valutues[x_index]
+        res =z*x1
+        result.configure(text = res)
+        p
+    else:
+        x = float(x1)
+        y = float(y1)
+        res = str(float((x * z) / y))
+        result.configure(text=res)
+
+
 
 
 
@@ -232,6 +248,9 @@ tab_control.add(calc, text="Калькулятор валют")
 countries = []
 valutues = []
 countries = parsing(datetime.today())[0]
+valutues = parsing(datetime.today())[1]
+valutues.append(1.0)
+countries.append('Рубль')
 country_1 = Combobox(calc)
 country_1.grid(row=0, column=0, padx=10, pady=10, ipadx=25)
 country_1['values'] = countries
@@ -242,8 +261,8 @@ money = Entry(calc)
 money.grid(row=0, column=1, pady=10, padx=10)
 result = Label(calc, text="")
 result.grid(row=1, column=1, pady=10, padx=10)
-convert = Button(calc, text = "Конвертировать",command = convert)
-convert.grid(row = 0, column = 2, padx = 10, pady = 10, ipadx = 15)
+converter = Button(calc, text = "Конвертировать",command = convert)
+converter.grid(row = 0, column = 2, padx = 10, pady = 10, ipadx = 15)
 
 grafic = Frame(tab_control)
 tab_control.add(grafic, text = "Динамика курса")
